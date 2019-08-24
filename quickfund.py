@@ -44,11 +44,12 @@ def quickfund(plugin, amount_sat, num_channels):
     top_cap = top_n_capacity(plugin.rpc, num_channels + 5, ignore=out_peers)
 
     num_success = 0
+    payload = {"channels":[]}
     for chan in top_cap:
         plugin.log("Funding channel %s with %s sat" % (chan, amount_per_channel))
         try:
             plugin.rpc.connect(chan['node_id'])
-            plugin.rpc.fundchannel(chan['node_id'], amount_per_channel)
+            payload['channels'].append({'id': chan['node_id'], 'satoshi':amount_per_channel, 'announce':True})
             num_success += 1
             if num_success >= num_channels:
                 break
@@ -56,7 +57,8 @@ def quickfund(plugin, amount_sat, num_channels):
             # If failing to fund, just keep on trying
             plugin.log("Funding channel %s failed... %s" % (chan, str(e)))
             continue
-
+    
+    plugin.rpc.call("fund_multi", payload)
     return "Succes!"
 
 
